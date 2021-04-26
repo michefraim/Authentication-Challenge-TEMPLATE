@@ -1,8 +1,6 @@
 const express = require("express");
 const morgan = require("morgan");
-
-const app = express();
-
+const index = require('./api/users/index');
 const USERS = [
   {
     email: "michefraim@gmail.com",
@@ -23,21 +21,20 @@ const USERS = [
     isAdmin: false,
   },
 ];
-// const INFORMATION = [{ email, info }];
-// const REFRESHTOKENS = [];
+const INFORMATION = [];
+const REFRESHTOKENS = [];
 
-morgan.token("body", (req, res) => JSON.stringify(req.body));
+
+const app = express();
+app.use(express.json());
+
+app.use('/users', index);
+morgan.token("body", (request, response) => JSON.stringify(request.body));
 app.use(morgan(":body :method :url :response-time"));
 
-// app.put('/api/persons/:id', (request, response, next) => {
-//   const body = request.body;
-
-//   if (Object.keys(body).length === 0) {
-//     return response.status(400).send('Bad Request');
-//   }
 
 const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
+  return response.status(404).send("unknown endpoint");
 };
 
 // // handler of requests with unknown endpoint
