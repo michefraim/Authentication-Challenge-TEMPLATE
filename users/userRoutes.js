@@ -2,6 +2,8 @@
 
 const { hashSync, genSaltSync, compareSync } = require("bcrypt");
 const { sign } = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
+const {tokenToUser} = require('../auth/token_validation')
 const JWT_CODE = "ggwp1337";
 const USERS = [
   {
@@ -33,12 +35,13 @@ const register = (request, response) => {
   });
   INFORMATION.push({ email: body.email, name: body.name });
   // console.log(INFORMATION);
-//   console.log(USERS);
+  //   console.log(USERS);
   return response.status(201).send("Register Success");
 };
 
 const login = (request, response) => {
   const body = request.body;
+  console.log(body);
   const currentUser = USERS.filter((user) => user.email === body.email)[0];
 
   if (currentUser.length === 0) {
@@ -65,7 +68,25 @@ const login = (request, response) => {
   }
 };
 
-const tokenValidate = (request, response) => {};
+const tokenValidate = (request, response, next) => {
+  let token = request.get("authorization");
+
+  if (!token) {
+    return response.status(401).send("Access Token Required");
+  }
+  // Remove Bearer from string
+  token = token.slice(7);
+  console.log(token);
+  jwt.verify(token, JWT_CODE, (err, decoded) => {
+    if (err) {
+      return response.status(403).send("Invalid Access Token");
+    } else {
+      request.decoded = decoded;
+      next();
+    }
+    return response.status(200).json({ valid: true });
+  });
+};
 
 module.exports = {
   register,
