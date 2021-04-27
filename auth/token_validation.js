@@ -6,18 +6,20 @@ const tokenToUser = (request, response, next) => {
   const token = authHeader && authHeader.slice(7);
 
   if (!token) {
-    return response.status(401).send("Access Token Required");
+    request.doesHaveToken = false;
+  }else {
+    jwt.verify(token, ACCESS_TOKEN_SECRET, (err, decoded) => {
+      if (err) {
+        console.log(err);
+        request.doesHaveToken = true;
+      }
+      request.doesHaveToken = true;
+      request.user = decoded;
+    });
+  };
+  next();
   }
 
-  jwt.verify(token, ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      console.log(err);
-      return response.status(403).send("Invalid Access Token");
-    }
-    request.user = decoded;
-    next();
-  });
-  };
 
 module.exports = {
     tokenToUser

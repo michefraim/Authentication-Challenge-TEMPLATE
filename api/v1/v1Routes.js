@@ -3,6 +3,9 @@
 const { USERS, INFORMATION } = require("../../users/userRoutes");
 
 const information = (request, response) => {
+  if (!request.user) {
+    return response.status(403).send("Invalid Refresh Token")
+  }
   const { email } = request.user;
   console.log(email);
   if (request.user) {
@@ -15,6 +18,9 @@ const information = (request, response) => {
 };
 
 const users = (request, response) => {
+  if (!request.user) {
+    return response.status(403).send("Invalid Refresh Token")
+  }
   const { isAdmin } = request.user;
   console.log(isAdmin);
   if (!isAdmin) {

@@ -74,6 +74,12 @@ const login = (request, response) => {
 };
 
 const tokenValidate = (request, response, next) => {
+  const authHeader = request.headers["authorization"];
+  const token = authHeader && authHeader.slice(7);
+
+  if (!token) {
+    return response.status(401).send("Access Token Required");
+  }
   response.json({ valid: true });
 };
 
