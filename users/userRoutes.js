@@ -36,8 +36,8 @@ const register = (request, response) => {
     isAdmin: false,
   });
   INFORMATION.push({ email: body.email, info: `${body.name} info` });
-  console.log(INFORMATION);
-  console.log(USERS);
+  // console.log(INFORMATION);
+  // console.log(USERS);
   return response.status(201).send("Register Success");
 };
 
@@ -96,7 +96,13 @@ const token = (request, response) => {
       return response.status(403).send("Invalid Refresh Token");
     }
 
-    const accessToken = sign(decoded, ACCESS_TOKEN_SECRET, {
+    console.log(decoded);
+    const infoForToken = {
+      name: decoded.name,
+      email: decoded.email,
+      isAdmin: decoded.isAdmin,
+    };
+    const accessToken = sign(infoForToken, ACCESS_TOKEN_SECRET, {
       expiresIn: "10s",
     });
     return response.status(200).json({ accessToken });
