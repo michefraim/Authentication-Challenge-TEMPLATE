@@ -1,22 +1,21 @@
 const jwt = require("jsonwebtoken");
-const JWT_CODE = "ggwp1337";
+const ACCESS_TOKEN_SECRET = "ggwp1337";
 
 const tokenToUser = (request, response, next) => {
-  let token = request.get("authorization");
+  const authHeader = request.headers["authorization"];
+  const token = authHeader && authHeader.slice(7);
 
   if (!token) {
     return response.status(401).send("Access Token Required");
   }
-  // Remove Bearer from string
-  token = token.slice(7);
-  console.log(token);
-  jwt.verify(token, JWT_CODE, (err, decoded) => {
+
+  jwt.verify(token, ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
+      console.log(err);
       return response.status(403).send("Invalid Access Token");
-    } else {
-      request.decoded = decoded;
-      next();
     }
+    request.user = decoded;
+    next();
   });
   };
 

@@ -1,15 +1,17 @@
 "use strict";
 
 const { hashSync, genSaltSync, compareSync } = require("bcrypt");
+const { request, response } = require("express");
 const { sign } = require("jsonwebtoken");
 const jwt = require("jsonwebtoken");
-const {tokenToUser} = require('../auth/token_validation')
-const JWT_CODE = "ggwp1337";
+const { tokenToUser } = require("../auth/token_validation");
+const ACCESS_TOKEN_SECRET = "ggwp1337";
+const REFRESH_TOKEN_SECRET = "GME420";
 const USERS = [
   {
-    email: "michefraim@gmail.com",
-    name: "Sadrik",
-    password: "$2b$10$qUt6ccm.TBsSUmeJcTByj.W0xQA5tYoOVoPTzVrtXJA5pzREd31lC",
+    email: "admin@email.com",
+    name: "admin",
+    password: "$2b$10$yDsP12esYHm.6KyJjfV/5OSFZTODZdm9fPBCU2yYiPy5mUf1VsAeK",
     isAdmin: true,
   },
 ];
@@ -33,35 +35,37 @@ const register = (request, response) => {
     password: body.password,
     isAdmin: false,
   });
-  INFORMATION.push({ email: body.email, name: body.name });
+  INFORMATION.push({ email: body.email, info: `${body.name} info` });
   // console.log(INFORMATION);
-  //   console.log(USERS);
   return response.status(201).send("Register Success");
 };
 
 const login = (request, response) => {
   const body = request.body;
-  console.log(body);
   const currentUser = USERS.filter((user) => user.email === body.email)[0];
 
-  if (currentUser.length === 0) {
+  if (!currentUser || currentUser.length === 0) {
     return response.status(404).send("cannot find user");
   }
 
   const isPasswordCorrect = compareSync(body.password, currentUser.password);
-  console.log("is password correct?", isPasswordCorrect);
 
   if (isPasswordCorrect) {
-    currentUser.password = undefined;
-    const jsonToken = sign({ result: currentUser }, JWT_CODE, {
-      expiresIn: "1h",
-    });
-    return response.status(200).json({
-      accessToken: jsonToken,
-      refreshToken: null, // needs to be addressed
-      email: currentUser.email,
+    const dataInToken = {
       name: currentUser.name,
+      email: currentUser.email,
       isAdmin: currentUser.isAdmin,
+    };
+    const accessToken = sign(dataInToken, ACCESS_TOKEN_SECRET, {
+      expiresIn: "10s",
+    });
+    const refreshToken = sign(dataInToken, REFRESH_TOKEN_SECRET);
+    REFRESHTOKENS.push(refreshToken);
+
+    return response.status(200).json({
+      accessToken,
+      refreshToken,
+      ...currentUser,
     });
   } else {
     return response.status(403).send("User or Password incorrect");
@@ -69,27 +73,52 @@ const login = (request, response) => {
 };
 
 const tokenValidate = (request, response, next) => {
-  let token = request.get("authorization");
+  response.json({ valid: true });
+};
+
+const token = (request, response) => {
+  const { token } = request.body;
 
   if (!token) {
-    return response.status(401).send("Access Token Required");
+    return response.status(401).send("Refresh Token Required");
+  } else if (!REFRESHTOKENS.includes(token)) {
+    return response.status(403).send("Invalid Refresh Token");
   }
-  // Remove Bearer from string
-  token = token.slice(7);
-  console.log(token);
-  jwt.verify(token, JWT_CODE, (err, decoded) => {
+  jwt.verify(token, REFRESH_TOKEN_SECRET, (err, decoded) => {
     if (err) {
-      return response.status(403).send("Invalid Access Token");
-    } else {
-      request.decoded = decoded;
-      next();
+      return response.status(403).send("Invalid Refresh Token");
     }
-    return response.status(200).json({ valid: true });
+
+    const accessToken = sign(decoded, ACCESS_TOKEN_SECRET, {
+      expiresIn: "10s",
+    });
+    return response.status(200).json({ accessToken });
   });
+};
+
+const logout = (request, response) => {
+  const { token } = request.body;
+
+  if (!token) {
+    return response.status(400).send("Refresh Token Required");
+  }
+  const refreshTokenIndex = REFRESHTOKENS.findIndex(
+    (rToken) => rToken === token
+  );
+
+  if (refreshTokenIndex === -1) {
+    return response.status(400).send("Invalid Refresh Token");
+  }
+  REFRESHTOKENS.splice(refreshTokenIndex, 1);
+  return response.send("User Logged Out Successfully");
 };
 
 module.exports = {
   register,
   login,
   tokenValidate,
+  logout,
+  token,
+  USERS,
+  INFORMATION,
 };

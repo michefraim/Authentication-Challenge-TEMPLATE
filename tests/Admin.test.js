@@ -23,6 +23,8 @@ describe('Admin Tests', () => {
         const adminLoginRes = await request(server)
             .post('/users/login')
             .send(userAdminMock)
+            console.log(userAdminMock);
+            console.log(adminLoginRes.body)
 
         expect(adminLoginRes.status).toBe(200)
         expect(adminLoginRes.body.isAdmin).toBe(true)
