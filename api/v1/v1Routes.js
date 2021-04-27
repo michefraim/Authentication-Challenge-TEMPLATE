@@ -21,7 +21,7 @@ const users = (request, response) => {
     return response.status(403).send("Invalid Access Token");
   }
   console.log(USERS);
-  response.json([USERS]);
+  response.json(USERS);
 };
 
 module.exports = {

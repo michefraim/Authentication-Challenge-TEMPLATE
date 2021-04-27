@@ -28,15 +28,16 @@ const register = (request, response) => {
     return response.status(409).send("user already exists");
   }
 
-  body.password = hashSync(body.password, genSaltSync(10));
+  const hashedPassword = hashSync(body.password, genSaltSync(10));
   USERS.push({
     email: body.email,
     name: body.name,
-    password: body.password,
+    password: hashedPassword,
     isAdmin: false,
   });
   INFORMATION.push({ email: body.email, info: `${body.name} info` });
-  // console.log(INFORMATION);
+  console.log(INFORMATION);
+  console.log(USERS);
   return response.status(201).send("Register Success");
 };
 
